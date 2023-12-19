@@ -16,7 +16,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import LENGTH, PERCENTAGE, VOLUME, UnitOfElectricCurrent
+from homeassistant.const import LENGTH, PERCENTAGE, VOLUME, UnitOfElectricCurrent, UnitOfLength, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -103,6 +103,7 @@ SENSOR_TYPES: dict[str, BMWSensorEntityDescription] = {
         translation_key="mileage",
         icon="mdi:speedometer",
         unit_type=LENGTH,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
         value=lambda x, hass: convert_and_round(x, hass.config.units.length, 2),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
@@ -112,6 +113,7 @@ SENSOR_TYPES: dict[str, BMWSensorEntityDescription] = {
         key_class="fuel_and_battery",
         icon="mdi:map-marker-distance",
         unit_type=LENGTH,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
         value=lambda x, hass: convert_and_round(x, hass.config.units.length, 2),
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -121,6 +123,7 @@ SENSOR_TYPES: dict[str, BMWSensorEntityDescription] = {
         key_class="fuel_and_battery",
         icon="mdi:map-marker-distance",
         unit_type=LENGTH,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
         value=lambda x, hass: convert_and_round(x, hass.config.units.length, 2),
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -130,6 +133,7 @@ SENSOR_TYPES: dict[str, BMWSensorEntityDescription] = {
         key_class="fuel_and_battery",
         icon="mdi:map-marker-distance",
         unit_type=LENGTH,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
         value=lambda x, hass: convert_and_round(x, hass.config.units.length, 2),
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -139,6 +143,7 @@ SENSOR_TYPES: dict[str, BMWSensorEntityDescription] = {
         key_class="fuel_and_battery",
         icon="mdi:gas-station",
         unit_type=VOLUME,
+        native_unit_of_measurement=UnitOfVolume.LITERS,
         value=lambda x, hass: convert_and_round(x, hass.config.units.volume, 2),
         state_class=SensorStateClass.MEASUREMENT,
     ),
