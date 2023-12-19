@@ -123,7 +123,7 @@ async def test_reading_yaml_config(
     assert device.config_picture == config.config_picture
     assert device.consider_home == config.consider_home
     assert device.icon == config.icon
-    assert f"{device_tracker.DOMAIN}.test" in hass.config.components
+    assert f"test.{device_tracker.DOMAIN}" in hass.config.components
 
 
 @patch("homeassistant.components.device_tracker.const.LOGGER.warning")
@@ -218,6 +218,7 @@ async def test_discover_platform(
     mock_demo_setup_scanner, mock_see, hass: HomeAssistant
 ) -> None:
     """Test discovery of device_tracker demo platform."""
+    await async_setup_component(hass, "homeassistant", {})
     with patch("homeassistant.components.device_tracker.legacy.update_config"):
         await discovery.async_load_platform(
             hass, device_tracker.DOMAIN, "demo", {"test_key": "test_val"}, {"bla": {}}
@@ -602,7 +603,7 @@ async def test_bad_platform(hass: HomeAssistant) -> None:
     with assert_setup_component(0, device_tracker.DOMAIN):
         assert await async_setup_component(hass, device_tracker.DOMAIN, config)
 
-    assert f"{device_tracker.DOMAIN}.bad_platform" not in hass.config.components
+    assert f"bad_platform.{device_tracker.DOMAIN}" not in hass.config.components
 
 
 async def test_adding_unknown_device_to_config(

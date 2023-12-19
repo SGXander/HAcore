@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 from datetime import timedelta
+from enum import StrEnum
 import logging
 from typing import Any, Final, TypedDict, final
 
 import voluptuous as vol
 
-from homeassistant.backports.enum import StrEnum
 from homeassistant.components.camera import Image
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -120,8 +119,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-@dataclass
-class ImageProcessingEntityDescription(EntityDescription):
+class ImageProcessingEntityDescription(EntityDescription, frozen_or_thawed=True):
     """A class that describes sensor entities."""
 
     device_class: ImageProcessingDeviceClass | None = None

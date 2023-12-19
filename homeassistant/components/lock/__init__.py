@@ -1,7 +1,6 @@
 """Component to interface with locks that can be controlled remotely."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import timedelta
 from enum import IntFlag
 import functools as ft
@@ -24,7 +23,7 @@ from homeassistant.const import (
     STATE_UNLOCKED,
     STATE_UNLOCKING,
 )
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.config_validation import (  # noqa: F401
     PLATFORM_SCHEMA,
@@ -33,12 +32,12 @@ from homeassistant.helpers.config_validation import (  # noqa: F401
 )
 from homeassistant.helpers.entity import Entity, EntityDescription
 from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.helpers.service import remove_entity_service_fields
 from homeassistant.helpers.typing import ConfigType, StateType
 
 _LOGGER = logging.getLogger(__name__)
 
 ATTR_CHANGED_BY = "changed_by"
+CONF_DEFAULT_CODE = "default_code"
 
 DOMAIN = "lock"
 SCAN_INTERVAL = timedelta(seconds=30)
@@ -74,46 +73,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await component.async_setup(config)
 
     component.async_register_entity_service(
-        SERVICE_UNLOCK, LOCK_SERVICE_SCHEMA, _async_unlock
+        SERVICE_UNLOCK, LOCK_SERVICE_SCHEMA, "async_handle_unlock_service"
     )
     component.async_register_entity_service(
-        SERVICE_LOCK, LOCK_SERVICE_SCHEMA, _async_lock
+        SERVICE_LOCK, LOCK_SERVICE_SCHEMA, "async_handle_lock_service"
     )
     component.async_register_entity_service(
-        SERVICE_OPEN, LOCK_SERVICE_SCHEMA, _async_open, [LockEntityFeature.OPEN]
+        SERVICE_OPEN,
+        LOCK_SERVICE_SCHEMA,
+        "async_handle_open_service",
+        [LockEntityFeature.OPEN],
     )
 
     return True
-
-
-async def _async_lock(entity: LockEntity, service_call: ServiceCall) -> None:
-    """Lock the lock."""
-    code: str = service_call.data.get(ATTR_CODE, "")
-    if entity.code_format_cmp and not entity.code_format_cmp.match(code):
-        raise ValueError(
-            f"Code '{code}' for locking {entity.entity_id} doesn't match pattern {entity.code_format}"
-        )
-    await entity.async_lock(**remove_entity_service_fields(service_call))
-
-
-async def _async_unlock(entity: LockEntity, service_call: ServiceCall) -> None:
-    """Unlock the lock."""
-    code: str = service_call.data.get(ATTR_CODE, "")
-    if entity.code_format_cmp and not entity.code_format_cmp.match(code):
-        raise ValueError(
-            f"Code '{code}' for unlocking {entity.entity_id} doesn't match pattern {entity.code_format}"
-        )
-    await entity.async_unlock(**remove_entity_service_fields(service_call))
-
-
-async def _async_open(entity: LockEntity, service_call: ServiceCall) -> None:
-    """Open the door latch."""
-    code: str = service_call.data.get(ATTR_CODE, "")
-    if entity.code_format_cmp and not entity.code_format_cmp.match(code):
-        raise ValueError(
-            f"Code '{code}' for opening {entity.entity_id} doesn't match pattern {entity.code_format}"
-        )
-    await entity.async_open(**remove_entity_service_fields(service_call))
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -128,8 +100,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return await component.async_unload_entry(entry)
 
 
-@dataclass
-class LockEntityDescription(EntityDescription):
+class LockEntityDescription(EntityDescription, frozen_or_thawed=True):
     """A class that describes lock entities."""
 
 
@@ -145,7 +116,23 @@ class LockEntity(Entity):
     _attr_is_jammed: bool | None = None
     _attr_state: None = None
     _attr_supported_features: LockEntityFeature = LockEntityFeature(0)
+    _lock_option_default_code: str = ""
     __code_format_cmp: re.Pattern[str] | None = None
+
+    @final
+    @callback
+    def add_default_code(self, data: dict[Any, Any]) -> dict[Any, Any]:
+        """Add default lock code."""
+        code: str = data.pop(ATTR_CODE, "")
+        if not code:
+            code = self._lock_option_default_code
+        if self.code_format_cmp and not self.code_format_cmp.match(code):
+            raise ValueError(
+                f"Code '{code}' for locking {self.entity_id} doesn't match pattern {self.code_format}"
+            )
+        if code:
+            data[ATTR_CODE] = code
+        return data
 
     @property
     def changed_by(self) -> str | None:
@@ -191,6 +178,11 @@ class LockEntity(Entity):
         """Return true if the lock is jammed (incomplete locking)."""
         return self._attr_is_jammed
 
+    @final
+    async def async_handle_lock_service(self, **kwargs: Any) -> None:
+        """Add default code and lock."""
+        await self.async_lock(**self.add_default_code(kwargs))
+
     def lock(self, **kwargs: Any) -> None:
         """Lock the lock."""
         raise NotImplementedError()
@@ -199,6 +191,11 @@ class LockEntity(Entity):
         """Lock the lock."""
         await self.hass.async_add_executor_job(ft.partial(self.lock, **kwargs))
 
+    @final
+    async def async_handle_unlock_service(self, **kwargs: Any) -> None:
+        """Add default code and unlock."""
+        await self.async_unlock(**self.add_default_code(kwargs))
+
     def unlock(self, **kwargs: Any) -> None:
         """Unlock the lock."""
         raise NotImplementedError()
@@ -206,6 +203,11 @@ class LockEntity(Entity):
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the lock."""
         await self.hass.async_add_executor_job(ft.partial(self.unlock, **kwargs))
+
+    @final
+    async def async_handle_open_service(self, **kwargs: Any) -> None:
+        """Add default code and open."""
+        await self.async_open(**self.add_default_code(kwargs))
 
     def open(self, **kwargs: Any) -> None:
         """Open the door latch."""
@@ -243,3 +245,34 @@ class LockEntity(Entity):
     def supported_features(self) -> LockEntityFeature:
         """Return the list of supported features."""
         return self._attr_supported_features
+
+    async def async_internal_added_to_hass(self) -> None:
+        """Call when the sensor entity is added to hass."""
+        await super().async_internal_added_to_hass()
+        if not self.registry_entry:
+            return
+        self._async_read_entity_options()
+
+    @callback
+    def async_registry_entry_updated(self) -> None:
+        """Run when the entity registry entry has been updated."""
+        self._async_read_entity_options()
+
+    @callback
+    def _async_read_entity_options(self) -> None:
+        """Read entity options from entity registry.
+
+        Called when the entity registry entry has been updated and before the lock is
+        added to the state machine.
+        """
+        assert self.registry_entry
+        if (lock_options := self.registry_entry.options.get(DOMAIN)) and (
+            custom_default_lock_code := lock_options.get(CONF_DEFAULT_CODE)
+        ):
+            if self.code_format_cmp and self.code_format_cmp.match(
+                custom_default_lock_code
+            ):
+                self._lock_option_default_code = custom_default_lock_code
+            return
+
+        self._lock_option_default_code = ""
