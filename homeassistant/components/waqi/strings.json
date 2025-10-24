@@ -3,19 +3,10 @@
     "step": {
       "user": {
         "data": {
-          "api_key": "[%key:common::config_flow::data::api_key%]",
-          "method": "How do you want to select a measuring station?"
-        }
-      },
-      "map": {
-        "description": "Select a location to get the closest measuring station.",
-        "data": {
-          "location": "[%key:common::config_flow::data::location%]"
-        }
-      },
-      "station_number": {
-        "data": {
-          "station_number": "Measuring station number"
+          "api_key": "[%key:common::config_flow::data::api_key%]"
+        },
+        "data_description": {
+          "api_key": "API key for the World Air Quality Index"
         }
       }
     },
@@ -25,33 +16,44 @@
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_service%]"
     }
   },
-  "selector": {
-    "method": {
-      "options": {
-        "map": "Select nearest from point on the map",
-        "station_number": "Enter a station number"
-      }
-    }
-  },
-  "issues": {
-    "deprecated_yaml_import_issue_invalid_auth": {
-      "title": "The World Air Quality Index YAML configuration import failed",
-      "description": "Configuring World Air Quality Index using YAML is being removed but there was an authentication error importing your YAML configuration.\n\nCorrect the YAML configuration and restart Home Assistant to try again or remove the World Air Quality Index YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
-    },
-    "deprecated_yaml_import_issue_cannot_connect": {
-      "title": "The WAQI YAML configuration import failed",
-      "description": "Configuring World Air Quality Index using YAML is being removed but there was an connection error importing your YAML configuration.\n\nEnsure connection to WAQI works and restart Home Assistant to try again or remove the World Air Quality Index YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
-    },
-    "deprecated_yaml_import_issue_already_configured": {
-      "title": "The WAQI YAML configuration import failed",
-      "description": "Configuring World Air Quality Index using YAML is being removed but the measuring station was already imported when trying to import the YAML configuration.\n\nEnsure the imported configuration is correct and remove the World Air Quality Index YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
-    },
-    "deprecated_yaml_import_issue_none_found": {
-      "title": "The WAQI YAML configuration import failed",
-      "description": "Configuring World Air Quality Index using YAML is being removed but there weren't any stations imported because they couldn't be found.\n\nEnsure the imported configuration is correct and remove the World Air Quality Index YAML configuration from your configuration.yaml file and continue to [set up the integration]({url}) manually."
+  "config_subentries": {
+    "station": {
+      "step": {
+        "user": {
+          "title": "Add measuring station",
+          "description": "How do you want to select a measuring station?",
+          "menu_options": {
+            "map": "[%key:common::config_flow::data::location%]",
+            "station_number": "Measuring station number"
+          }
+        },
+        "map": {
+          "data": {
+            "location": "[%key:common::config_flow::data::location%]"
+          },
+          "data_description": {
+            "location": "The location to get the nearest measuring station from"
+          }
+        },
+        "station_number": {
+          "data": {
+            "station_number": "[%key:component::waqi::config_subentries::station::step::user::menu_options::station_number%]"
+          },
+          "data_description": {
+            "station_number": "The number of the measuring station"
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "[%key:common::config_flow::abort::already_configured_service%]"
+      },
+      "initiate_flow": {
+        "user": "Add measuring station"
+      },
+      "entry_type": "Measuring station"
     }
   },
   "entity": {
@@ -75,7 +77,7 @@
         "name": "[%key:component::sensor::entity_component::pm25::name%]"
       },
       "neph": {
-        "name": "Visbility using nephelometry"
+        "name": "Visibility using nephelometry"
       },
       "dominant_pollutant": {
         "name": "Dominant pollutant",

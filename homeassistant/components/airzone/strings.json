@@ -52,6 +52,27 @@
           "40deg": "[%key:component::airzone::entity::select::grille_angles::state::40deg%]"
         }
       },
+      "modes": {
+        "name": "Mode",
+        "state": {
+          "cool": "[%key:component::climate::entity_component::_::state::cool%]",
+          "dry": "[%key:component::climate::entity_component::_::state::dry%]",
+          "fan": "[%key:component::climate::entity_component::_::state::fan_only%]",
+          "heat": "[%key:component::climate::entity_component::_::state::heat%]",
+          "heat_cool": "[%key:component::climate::entity_component::_::state::heat_cool%]",
+          "stop": "Stop"
+        }
+      },
+      "q_adapt": {
+        "name": "Q-Adapt",
+        "state": {
+          "standard": "Standard",
+          "power": "Power",
+          "silence": "Silence",
+          "minimum": "Minimum",
+          "maximum": "Maximum"
+        }
+      },
       "sleep_times": {
         "name": "Sleep",
         "state": {
@@ -65,6 +86,9 @@
     "sensor": {
       "rssi": {
         "name": "RSSI"
+      },
+      "thermostat_signal": {
+        "name": "Signal strength"
       }
     }
   }

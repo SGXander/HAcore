@@ -1,10 +1,11 @@
 """Xbox Media Source Implementation."""
+
 from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
 
-from pydantic.error_wrappers import ValidationError  # pylint: disable=no-name-in-module
+from pydantic import ValidationError
 from xbox.webapi.api.client import XboxLiveClient
 from xbox.webapi.api.provider.catalog.models import FieldsTemplate, Image
 from xbox.webapi.api.provider.gameclips.models import GameclipsResponse
@@ -12,7 +13,7 @@ from xbox.webapi.api.provider.screenshots.models import ScreenshotResponse
 from xbox.webapi.api.provider.smartglass.models import InstalledPackage
 
 from homeassistant.components.media_player import MediaClass
-from homeassistant.components.media_source.models import (
+from homeassistant.components.media_source import (
     BrowseMediaSource,
     MediaSource,
     MediaSourceItem,
@@ -23,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from .browse_media import _find_media_image
 from .const import DOMAIN
+from .coordinator import XboxConfigEntry
 
 MIME_TYPE_MAP = {
     "gameclips": "video/mp4",
@@ -37,8 +39,8 @@ MEDIA_CLASS_MAP = {
 
 async def async_get_media_source(hass: HomeAssistant):
     """Set up Xbox media source."""
-    entry = hass.config_entries.async_entries(DOMAIN)[0]
-    client = hass.data[DOMAIN][entry.entry_id]["client"]
+    entry: XboxConfigEntry = hass.config_entries.async_entries(DOMAIN)[0]
+    client = entry.runtime_data.client
     return XboxSource(hass, client)
 
 
